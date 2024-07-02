@@ -18,6 +18,8 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - run: chmod +x ./entrypoint.sh
+      shell: bash
     - run: ./entrypoint.sh
       shell: bash
       env:
