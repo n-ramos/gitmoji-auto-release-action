@@ -12,13 +12,16 @@ inputs:
     description: 'Indicate if the release should be marked as a prerelease'
     required: false
     default: 'false'
+  github_token:
+    description: 'GitHub Token'
+    required: true
 runs:
   using: 'composite'
   steps:
     - run: ./entrypoint.sh
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
         INPUT_BRANCH: ${{ inputs.branch }}
         INPUT_DRAFT: ${{ inputs.draft }}
         INPUT_PRERELEASE: ${{ inputs.prerelease }}
