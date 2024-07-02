@@ -1,0 +1,36 @@
+name: Auto Release
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Auto Release
+        id: auto_release
+        uses: n-ramos/gitmoji-auto-release-action@v1
+        with:
+          branch: ${{ github.ref }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.auto_release.outputs.tag }}
+          release_name: ${{ steps.auto_release.outputs.release_name }}
+          body: ${{ steps.auto_release.outputs.release_body }}
+          draft: false
+          prerelease: false

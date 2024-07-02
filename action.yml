@@ -1,0 +1,9 @@
+name: 'Auto Release'
+description: 'Automate release and tag creation based on Gitmoji and SemVer'
+inputs:
+  branch:
+    description: 'Branch to interact with'
+    required: true
+runs:
+  using: 'node12'
+  main: 'index.js'
