@@ -12,19 +12,21 @@ inputs:
     description: 'Indicate if the release should be marked as a prerelease'
     required: false
     default: 'false'
+  github_token:
+    description: 'GitHub token for authentication'
+    required: true
 runs:
   using: 'composite'
   steps:
-    - name: Checkout code
-      run: git fetch --tags
-    - name: Get the latest tag
+    - run: git fetch --tags
+      shell: bash
+    - run: echo "::set-output name=latest_tag::$(git describe --tags `git rev-list --tags --max-count=1`)"
       id: get_latest_tag
-      run: echo "::set-output name=latest_tag::$(git describe --tags `git rev-list --tags --max-count=1`)"
-    - name: Get commits since the latest tag
+      shell: bash
+    - run: echo "::set-output name=commits::$(git log ${{ steps.get_latest_tag.outputs.latest_tag }}..HEAD --pretty=format:'%s')"
       id: get_commits
-      run: echo "::set-output name=commits::$(git log ${{ steps.get_latest_tag.outputs.latest_tag }}..HEAD --pretty=format:'%s')"
-    - name: Analyze commits
-      id: analyze_commits
+      shell: bash
+    - id: analyze_commits
       run: |
         PATCH=0
         MINOR=0
@@ -45,8 +47,8 @@ runs:
         echo "::set-output name=minor::${MINOR}"
         echo "::set-output name=major::${MAJOR}"
         echo "::set-output name=release_body::${RELEASE_BODY}"
-    - name: Determine new version
-      id: determine_version
+      shell: bash
+    - id: determine_version
       run: |
         LATEST_TAG=${{ steps.get_latest_tag.outputs.latest_tag }}
         IFS='.' read -r -a VERSION_PARTS <<< "${LATEST_TAG/v/}"
@@ -69,17 +71,17 @@ runs:
         RELEASE_NAME="Release ${NEW_TAG}"
         echo "::set-output name=new_tag::${NEW_TAG}"
         echo "::set-output name=release_name::${RELEASE_NAME}"
-    - name: Create new tag
-      run: |
+      shell: bash
+    - run: |
         git tag ${{ steps.determine_version.outputs.new_tag }}
         git push origin ${{ steps.determine_version.outputs.new_tag }}
-    - name: Create GitHub release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.github_token }}
+      shell: bash
+    - uses: actions/create-release@v1
       with:
         tag_name: ${{ steps.determine_version.outputs.new_tag }}
         release_name: ${{ steps.determine_version.outputs.release_name }}
         body: ${{ steps.analyze_commits.outputs.release_body }}
         draft: ${{ inputs.draft }}
         prerelease: ${{ inputs.prerelease }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
