@@ -17,9 +17,8 @@ runs:
   steps:
     - run: ./entrypoint.sh
       shell: bash
-      with:
-        branch: ${{ inputs.branch }}
-        draft: ${{ inputs.draft }}
-        prerelease: ${{ inputs.prerelease }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        INPUT_BRANCH: ${{ inputs.branch }}
+        INPUT_DRAFT: ${{ inputs.draft }}
+        INPUT_PRERELEASE: ${{ inputs.prerelease }}
