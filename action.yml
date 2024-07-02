@@ -1,4 +1,4 @@
-name: 'Auto Release'
+name: 'Gitmoji Auto Release'
 description: 'Automate release and tag creation based on Gitmoji and SemVer'
 inputs:
   branch:
