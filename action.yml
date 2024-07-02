@@ -1,9 +1,13 @@
 name: 'Gitmoji Auto Release'
-description: 'Automate release and tag creation based on Gitmoji and SemVer'
+description: 'Automate release and tag creation based on Gitmoji and SemVer using shell script'
 inputs:
   branch:
     description: 'Branch to interact with'
     required: true
 runs:
-  using: 'node12'
-  main: 'index.js'
+  using: 'composite'
+  steps:
+    - run: ./entrypoint.sh
+      shell: bash
+      with:
+        branch: ${{ inputs.branch }}

@@ -1,6 +1,6 @@
-# Auto Release Action
+# Gitmoji Auto Release Action
 
-This GitHub Action automates the creation of releases and tags based on Gitmoji and Semantic Versioning (SemVer).
+This GitHub Action automates the creation of releases and tags based on Gitmoji and Semantic Versioning (SemVer) using shell script.
 
 ## Inputs
 
@@ -35,14 +35,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '14'
-
-    - name: Auto Release
+    - name: Gitmoji Auto Release
       id: auto_release
-      uses: n-ramos/auto-release-action@v1
+      uses: <your-username>/gitmoji-auto-release-action@v1
       with:
         branch: ${{ github.ref }}
 
@@ -56,3 +51,4 @@ jobs:
         body: ${{ steps.auto_release.outputs.release_body }}
         draft: false
         prerelease: false
+```
