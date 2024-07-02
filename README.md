@@ -5,6 +5,8 @@ This GitHub Action automates the creation of releases and tags based on Gitmoji 
 ## Inputs
 
 - `branch`: The branch to interact with.
+- `draft`: Indicate if the release should be marked as a draft.
+- `prerelease`: Indicate if the release should be marked as a prerelease.
 
 ## Outputs
 
@@ -37,18 +39,10 @@ jobs:
 
     - name: Gitmoji Auto Release
       id: auto_release
-      uses: <your-username>/gitmoji-auto-release-action@v1
+      uses: n-ramos/gitmoji-auto-release-action@v1
       with:
         branch: ${{ github.ref }}
-
-    - name: Create GitHub Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.auto_release.outputs.tag }}
-        release_name: ${{ steps.auto_release.outputs.release_name }}
-        body: ${{ steps.auto_release.outputs.release_body }}
         draft: false
         prerelease: false
-```
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
