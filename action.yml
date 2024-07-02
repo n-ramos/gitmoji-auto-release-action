@@ -1,5 +1,5 @@
 name: 'Gitmoji Auto Release Action'
-description: 'Automate release and tag creation based on Gitmoji and SemVer using shell script'
+description: 'Automate release and tag creation based on Gitmoji and SemVer'
 inputs:
   branch:
     description: 'Branch to interact with'
@@ -12,18 +12,74 @@ inputs:
     description: 'Indicate if the release should be marked as a prerelease'
     required: false
     default: 'false'
-  github_token:
-    description: 'GitHub Token'
-    required: true
 runs:
   using: 'composite'
   steps:
-    - run: chmod +x ./entrypoint.sh
-      shell: bash
-    - run: ./entrypoint.sh
-      shell: bash
+    - name: Checkout code
+      run: git fetch --tags
+    - name: Get the latest tag
+      id: get_latest_tag
+      run: echo "::set-output name=latest_tag::$(git describe --tags `git rev-list --tags --max-count=1`)"
+    - name: Get commits since the latest tag
+      id: get_commits
+      run: echo "::set-output name=commits::$(git log ${{ steps.get_latest_tag.outputs.latest_tag }}..HEAD --pretty=format:'%s')"
+    - name: Analyze commits
+      id: analyze_commits
+      run: |
+        PATCH=0
+        MINOR=0
+        MAJOR=0
+        RELEASE_BODY=""
+        IFS=$'\n'
+        for COMMIT in ${{ steps.get_commits.outputs.commits }}; do
+          if [[ $COMMIT == *":bug:"* ]] || [[ $COMMIT == *":lock:"* ]] || [[ $COMMIT == *":adhesive_bandage:"* ]]; then
+            PATCH=$((PATCH+1))
+          elif [[ $COMMIT == *":sparkles:"* ]] || [[ $COMMIT == *":rocket:"* ]] || [[ $COMMIT == *":zap:"* ]]; then
+            MINOR=$((MINOR+1))
+          elif [[ $COMMIT == *":boom:"* ]] || [[ $COMMIT == *":firecracker:"* ]]; then
+            MAJOR=$((MAJOR+1))
+          fi
+          RELEASE_BODY+="- ${COMMIT}\n"
+        done
+        echo "::set-output name=patch::${PATCH}"
+        echo "::set-output name=minor::${MINOR}"
+        echo "::set-output name=major::${MAJOR}"
+        echo "::set-output name=release_body::${RELEASE_BODY}"
+    - name: Determine new version
+      id: determine_version
+      run: |
+        LATEST_TAG=${{ steps.get_latest_tag.outputs.latest_tag }}
+        IFS='.' read -r -a VERSION_PARTS <<< "${LATEST_TAG/v/}"
+        MAJOR_VERSION=${VERSION_PARTS[0]}
+        MINOR_VERSION=${VERSION_PARTS[1]}
+        PATCH_VERSION=${VERSION_PARTS[2]}
+
+        if [[ ${{ steps.analyze_commits.outputs.major }} -gt 0 ]]; then
+          MAJOR_VERSION=$((MAJOR_VERSION+1))
+          MINOR_VERSION=0
+          PATCH_VERSION=0
+        elif [[ ${{ steps.analyze_commits.outputs.minor }} -gt 0 ]]; then
+          MINOR_VERSION=$((MINOR_VERSION+1))
+          PATCH_VERSION=0
+        else
+          PATCH_VERSION=$((PATCH_VERSION+1))
+        fi
+
+        NEW_TAG="v${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION}"
+        RELEASE_NAME="Release ${NEW_TAG}"
+        echo "::set-output name=new_tag::${NEW_TAG}"
+        echo "::set-output name=release_name::${RELEASE_NAME}"
+    - name: Create new tag
+      run: |
+        git tag ${{ steps.determine_version.outputs.new_tag }}
+        git push origin ${{ steps.determine_version.outputs.new_tag }}
+    - name: Create GitHub release
+      uses: actions/create-release@v1
       env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
-        INPUT_BRANCH: ${{ inputs.branch }}
-        INPUT_DRAFT: ${{ inputs.draft }}
-        INPUT_PRERELEASE: ${{ inputs.prerelease }}
+        GITHUB_TOKEN: ${{ secrets.github_token }}
+      with:
+        tag_name: ${{ steps.determine_version.outputs.new_tag }}
+        release_name: ${{ steps.determine_version.outputs.release_name }}
+        body: ${{ steps.analyze_commits.outputs.release_body }}
+        draft: ${{ inputs.draft }}
+        prerelease: ${{ inputs.prerelease }}
