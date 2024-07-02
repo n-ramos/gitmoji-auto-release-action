@@ -2,12 +2,12 @@ name: Auto Release
 
 on:
   pull_request:
-    branches:
-      - main
-      - develop
+    types:
+      - closed
 
 jobs:
   release:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
