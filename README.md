@@ -42,7 +42,7 @@ jobs:
 
     - name: Auto Release
       id: auto_release
-      uses: <your-username>/auto-release-action@v1
+      uses: n-ramos/auto-release-action@v1
       with:
         branch: ${{ github.ref }}
 
